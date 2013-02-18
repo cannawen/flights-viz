@@ -62,7 +62,7 @@ var quantize = d3.scale.quantize()
     .domain([0, .15])
     .range(d3.range(9).map(function(i) { return "q" + i + "-9"; }));
 
-d3.json("data/world2.json", function(error, world) {
+d3.json("data/world.json", function(error, world) {
 
   // draw countries
   svg.selectAll(".country")
@@ -73,7 +73,7 @@ d3.json("data/world2.json", function(error, world) {
 
 });
 
-d3.json("data/places.json", function(error, places) {
+d3.json("data/original/places.json", function(error, places) {
 
   // draw cities
   svg.selectAll(".city")
