@@ -3,15 +3,7 @@
 <meta charset="utf-8">
 <style>
 
-
-.subunit-boundary {
-  fill: none;
-  stroke: #777;
-  stroke-linejoin: round;
-}
-
-.place,
-.place-label {
+.city:hover {
   fill: #ea1010;
 }
 
@@ -20,6 +12,29 @@ text {
   font-size: 10px;
   pointer-events: none;
 }
+
+svg path.land {
+  fill: #CCC;
+}
+
+.country {
+  fill: #EEE;
+  stroke: #CCC;
+}
+
+.country:hover {
+  fill: #0F0;
+}
+
+.q0-9 { fill:rgb(247,251,255); }
+.q1-9 { fill:rgb(222,235,247); }
+.q2-9 { fill:rgb(198,219,239); }
+.q3-9 { fill:rgb(158,202,225); }
+.q4-9 { fill:rgb(107,174,214); }
+.q5-9 { fill:rgb(66,146,198); }
+.q6-9 { fill:rgb(33,113,181); }
+.q7-9 { fill:rgb(8,81,156); }
+.q8-9 { fill:rgb(8,48,107); }
 
 </style>
 <body>
@@ -43,31 +58,39 @@ var svg = d3.select("body").append("svg")
     .attr("width", width)
     .attr("height", height);
 
-d3.json("world.json", function(error, world) {
-  var subunits = topojson.object(world, world.objects.subunits),
-      places = topojson.object(world, world.objects.places);
+var quantize = d3.scale.quantize()
+    .domain([0, .15])
+    .range(d3.range(9).map(function(i) { return "q" + i + "-9"; }));
 
-  svg.selectAll(".subunit")
-      .data(subunits.geometries)
-    .enter().append("path")
-      .attr("class", function(d) { return "subunit " + d.id; })
-      .attr("d", path);
+d3.json("data/world2.json", function(error, world) {
 
-  svg.append("path")
-      .datum(topojson.mesh(world, world.objects.subunits, function(a, b) { return a !== b }))
+  // draw countries
+  svg.selectAll(".country")
+    .data(topojson.object(world, world.objects.countries).geometries)
+    .enter().append('path')
       .attr("d", path)
-      .attr("class", "subunit-boundary");
-
-  svg.append("path")
-      .datum(topojson.mesh(world, world.objects.subunits, function(a, b) { return a === b }))
-      .attr("d", path)
-      .attr("class", "subunit-boundary IRL");
-
-  svg.append("path")
-      .datum(places)
-      .attr("d", path)
-      .attr("class", "place");
+      .attr("class", "country " + quantize(0.1))
 
 });
 
+d3.json("data/places.json", function(error, places) {
+
+  // draw cities
+  svg.selectAll(".city")
+    .data(places.features)
+    .enter().append('path')
+      .attr("d", path)
+      .attr("class", "city");
+});
+
 </script>
+
+
+<!--
+
+<body>
+  <svg width=1200 height=800 class="numer of strings">
+    <path d=path() class="place" /> data={}
+  </svg>
+</body>
+-->
