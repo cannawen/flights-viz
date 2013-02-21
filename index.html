@@ -7,6 +7,11 @@
   fill: #ea1010;
 }
 
+.airport {
+  fill: #ea1010;
+}
+
+
 text {
   font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
   font-size: 10px;
@@ -73,6 +78,14 @@ d3.json("data/world.json", function(error, world) {
 
 });
 
+d3.json("data/airport.json",function(error,airports){
+    svg.selectAll(".airport")
+    .data(airports.features)
+    .enter().append('path')
+      .attr("d", path)
+      .attr("class", "airport");
+})
+
 d3.json("data/original/places.json", function(error, places) {
 
   // draw cities
@@ -82,6 +95,7 @@ d3.json("data/original/places.json", function(error, places) {
       .attr("d", path)
       .attr("class", "city");
 });
+
 
 </script>
 
