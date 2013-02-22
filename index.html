@@ -78,12 +78,17 @@ d3.json("data/world.json", function(error, world) {
 
 });
 
-d3.json("data/airport.json",function(error,airports){
-    svg.selectAll(".airport")
+d3.json("data/majorAirports.json",function(error,airports){
+    airports = svg.selectAll(".airport")
     .data(airports.features)
     .enter().append('path')
       .attr("d", path)
       .attr("class", "airport");
+
+    airports.on("click",function(d){
+      console.log(d);
+    })
+
 })
 
 d3.json("data/original/places.json", function(error, places) {
@@ -94,6 +99,11 @@ d3.json("data/original/places.json", function(error, places) {
     .enter().append('path')
       .attr("d", path)
       .attr("class", "city");
+});
+
+d3.csv("data/original/routes.csv", function(data) {
+  
+
 });
 
 

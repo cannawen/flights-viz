@@ -1,6 +1,6 @@
 <OGRVRTDataSource>
-    <OGRVRTLayer name="airports">
-        <SrcDataSource>data/airports.csv</SrcDataSource>
+    <OGRVRTLayer name="airports2">
+        <SrcDataSource>data/airports2.json</SrcDataSource>
         <GeometryType>wkbPoint</GeometryType>
         <LayerSRS>WGS84</LayerSRS>
         <GeometryField encoding="PointFromColumns" x="longitude" y="latitude"/>
