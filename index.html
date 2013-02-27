@@ -8,7 +8,7 @@
 }
 
 .airport {
-  fill: #ea1010;
+  
 }
 
 
@@ -46,6 +46,8 @@ svg path.land {
 <script src="http://d3js.org/d3.v3.min.js"></script>
 <script src="http://d3js.org/d3.geo.projection.v0.min.js"></script>
 <script src="http://d3js.org/topojson.v0.min.js"></script>
+<script src="geojson/geojson-utils.js"></script>
+
 <script>
 
 var width = 1200,
@@ -64,8 +66,10 @@ var svg = d3.select("body").append("svg")
     .attr("height", height);
 
 var quantize = d3.scale.quantize()
-    .domain([0, .15])
+    .domain([0, 10000000])
     .range(d3.range(9).map(function(i) { return "q" + i + "-9"; }));
+
+window.startingCity=null;
 
 d3.json("data/world.json", function(error, world) {
 
@@ -86,7 +90,11 @@ d3.json("data/majorAirports.json",function(error,airports){
       .attr("class", "airport");
 
     airports.on("click",function(d){
-      console.log(d);
+      window.startingCity=d;
+      airports.attr("class",function(e){
+         return (quantize(gju.pointDistance(e,d)))
+      })//quantize here  gju.pointDistance
+        .attr
     })
 
 })
@@ -101,7 +109,7 @@ d3.json("data/original/places.json", function(error, places) {
       .attr("class", "city");
 });
 
-d3.csv("data/original/routes.csv", function(data) {
+d3.csv("data/routes.csv", function(data) {
   
 
 });
