@@ -3,12 +3,12 @@
 <meta charset="utf-8">
 <style>
 
-.city:hover {
-  fill: #ea1010;
+body {
+  background: #f5f6fa;
 }
 
 .airport {
-  
+  fill: #000;
 }
 
 
@@ -23,23 +23,35 @@ svg path.land {
 }
 
 .country {
-  fill: #EEE;
+  fill: #edeffa;
   stroke: #CCC;
+}
+
+.red {
+  fill: #F00;
+}
+
+.none {
+  opacity: 0.1;
+}
+
+.src {
+  fill: #F00;
 }
 
 .country:hover {
   fill: #0F0;
 }
 
-.q0-9 { fill:rgb(247,251,255); }
-.q1-9 { fill:rgb(222,235,247); }
-.q2-9 { fill:rgb(198,219,239); }
-.q3-9 { fill:rgb(158,202,225); }
-.q4-9 { fill:rgb(107,174,214); }
-.q5-9 { fill:rgb(66,146,198); }
-.q6-9 { fill:rgb(33,113,181); }
-.q7-9 { fill:rgb(8,81,156); }
-.q8-9 { fill:rgb(8,48,107); }
+.q0-9 { fill:#000000; }
+.q1-9 { fill:#000642; }
+.q2-9 { fill:#010a6b; }
+.q3-9 { fill:#030e8a; }
+.q4-9 { fill:#0210ab; }
+.q5-9 { fill:#0213cc; }
+.q6-9 { fill:#0014f2; }
+.q7-9 { fill:#2638ff; }
+.q8-9 { fill:#5c69fa; }
 
 </style>
 <body>
@@ -47,8 +59,10 @@ svg path.land {
 <script src="http://d3js.org/d3.geo.projection.v0.min.js"></script>
 <script src="http://d3js.org/topojson.v0.min.js"></script>
 <script src="geojson/geojson-utils.js"></script>
-
+<script src="underscore.js"></script>
 <script>
+
+var maxDomain = 10000000;
 
 var width = 1200,
     height = 800;
@@ -66,10 +80,15 @@ var svg = d3.select("body").append("svg")
     .attr("height", height);
 
 var quantize = d3.scale.quantize()
-    .domain([0, 10000000])
+    .domain([0, maxDomain])
     .range(d3.range(9).map(function(i) { return "q" + i + "-9"; }));
 
 window.startingCity=null;
+
+//svg.append("rect")
+  //.attr("height","100%")
+  //.attr("width","100%")
+  //.attr("fill","1926e0")
 
 d3.json("data/world.json", function(error, world) {
 
@@ -78,7 +97,7 @@ d3.json("data/world.json", function(error, world) {
     .data(topojson.object(world, world.objects.countries).geometries)
     .enter().append('path')
       .attr("d", path)
-      .attr("class", "country " + quantize(0.1))
+      .attr("class", "country")
 
 });
 
@@ -89,31 +108,40 @@ d3.json("data/majorAirports.json",function(error,airports){
       .attr("d", path)
       .attr("class", "airport");
 
+    //On click of an airport
     airports.on("click",function(d){
-      window.startingCity=d;
-      airports.attr("class",function(e){
-         return (quantize(gju.pointDistance(e,d)))
-      })//quantize here  gju.pointDistance
-        .attr
+
+      var airportID = d.properties.airportID;
+      var connectedAirports=[]
+      //find all airports connected to d
+      d3.csv("data/routes.csv", function(data) { 
+        var len = data.length
+        for (var i=0;i<len;i++)
+          if(data[i].srcAirportID==airportID)
+            connectedAirports.push(data[i].destAirportID)
+
+        console.log(connectedAirports.length)
+        //add a quantization class to each airport
+        airports.attr("class",function(e){
+          if(_.indexOf(connectedAirports,e.properties.airportID) != -1)
+          {
+            return (quantize(gju.pointDistance(e,d)))
+          }
+          else if (e.properties.airportID == airportID)
+            return "red"
+          else
+            return (quantize(gju.pointDistance(e,d)) + " none")
+          })//quantize here  gju.pointDistance
+      
+      });
     })
 
 })
 
-d3.json("data/original/places.json", function(error, places) {
+function connected(d)
+{
 
-  // draw cities
-  svg.selectAll(".city")
-    .data(places.features)
-    .enter().append('path')
-      .attr("d", path)
-      .attr("class", "city");
-});
-
-d3.csv("data/routes.csv", function(data) {
-  
-
-});
-
+}
 
 </script>
 
