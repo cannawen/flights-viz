@@ -109,7 +109,7 @@ function initializeDijkstras()
 {
   for (var l in window.airportLinks)
   {
-    airportLinks[l].prev=null;
+    airportLinks[l].prev=undefined;
     airportLinks[l].cost=Infinity;
   }
 }
@@ -124,7 +124,7 @@ d3.json("data/original/airport.json", function(allAirports) {
       id = allAirports.features[i].properties.airportID;
 
       airportById[id] = allAirports.features[i];
-      airportLinks[id] = {cin:[],cout:[],prev:null,cost:Infinity};
+      airportLinks[id] = {cin:[],cout:[],prev:undefined,cost:Infinity};
     }
 
 
@@ -157,32 +157,55 @@ d3.json("data/original/airport.json", function(allAirports) {
       .attr("class", "airport");
 
     //On click of an airport
-    airports.on("mouseover",function(d){
+    airports.on("click",function(d){
 
-      var airportID = d.properties.airportID;
-      var connectedAirports=[]
-      //find all airports connected to d
-      for (var i=0;i<allRoutes.length;i++)
+      //Dijkstra's Algotithm
+      initializeDijkstras()
+      //Set current node to cost 0
+      airportLinks[d.airportID].cost=0;
+
+      //Place all nodes in queue
+      var Q = airportLinks;
+
+      //While queue is not empty
+      while ( Q != {})
       {
-        if(allRoutes[i].srcAirportID==airportID)
+        //u is node with smallest distance
+        //If the Queue was sorted, you could just dequeue it here
+        var u=_.min(Q,function(q){
+          return q.cost
+        })
+        //remove u from Q
+        delete Q.u
+        //If minimum cost is infinity, we have reached the end
+        if (u.cost==Infinity)
+          break;
+
+        //For each neighbour v of u
+        for (var i=0; i<u.cout.length;i++)
         {
-          connectedAirports.push(allRoutes[i].destAirportID)
+          //v is one neighbour of u, v=[id,cost]
+          var v = u.cout[i]
+          //is v still in Q?
+          vObj=Q[v[0]]
+          if ( vObj != undefined )
+          {
+            //How much would it cost to go from u to v?
+            var alt = u.cost + v[1]
+            //Is this new cost lower than v's currnet cost?
+            if ( alt < vObj.cost  )
+            {
+              //Set v's cost to the lower cost
+              vObj.cost = alt;
+              //Set the previous to u
+              vObj.prev = u;
+              //If I were going to sort the Q, I would sort it here
+            }
+          }
+
         }
       }
 
-      console.log(connectedAirports.length)
-      //add a quantization class to each airport
-      airports.attr("class",function(e){
-        bucket = quantize(planeTimeBetween(e,d))
-        if(_.indexOf(connectedAirports,e.properties.airportID) != -1)
-        {
-          return bucket
-        }
-        else if (e.properties.airportID == airportID)
-          return "red"
-        else
-          return (bucket + " none")
-          //quantize here  gju.pointDistance
       });
     });
   });
