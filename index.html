@@ -32,7 +32,7 @@ svg path.land {
 }
 
 .none {
-  opacity: 0.1;
+  opacity: 0.05;
 }
 
 .src {
@@ -40,7 +40,7 @@ svg path.land {
 }
 
 .country:hover {
-  fill: #0F0;
+  
 }
 
 .q0-9 { fill:#000000; }
@@ -55,14 +55,19 @@ svg path.land {
 
 </style>
 <body>
-<script src="http://d3js.org/d3.v3.min.js"></script>
+<script src="http://d3js.org/d3.v3.js"></script>
 <script src="http://d3js.org/d3.geo.projection.v0.min.js"></script>
 <script src="http://d3js.org/topojson.v0.min.js"></script>
 <script src="geojson/geojson-utils.js"></script>
 <script src="underscore.js"></script>
 <script>
 
-var maxDomain = 10000000;
+var minConnections = 0;
+
+var airSpeed = 250; //meters/second
+var airportDelay = 7200 //two hours in seconds
+
+var maxDomain = 10000000/airSpeed;
 
 var width = 1200,
     height = 800;
@@ -85,10 +90,9 @@ var quantize = d3.scale.quantize()
 
 window.startingCity=null;
 
-//svg.append("rect")
-  //.attr("height","100%")
-  //.attr("width","100%")
-  //.attr("fill","1926e0")
+function planeDistanceToTime(dist){
+  return dist/airSpeed + airportDelay;
+}
 
 d3.json("data/world.json", function(error, world) {
 
@@ -101,47 +105,77 @@ d3.json("data/world.json", function(error, world) {
 
 });
 
-d3.json("data/majorAirports.json",function(error,airports){
-    airports = svg.selectAll(".airport")
-    .data(airports.features)
+d3.json("data/original/airport.json", function(allAirports) {
+  d3.csv("data/routes.csv", function(allRoutes) {
+    
+    window.airportById = {};
+    window.airportLinks = {};
+
+    for (var i=0;i<allAirports.features.length;i++){
+      id = allAirports.features[i].properties.airportID;
+
+      airportById[id] = allAirports.features[i];
+      airportLinks[id] = {cin:[],cout:[]};
+    }
+
+
+    for (var i=0;i<allRoutes.length;i++)
+    {
+      var src = allRoutes[i].srcAirportID;
+      var dest = allRoutes[i].destAirportID;
+      
+      if(src != "\\N" && dest != "\\N"){
+
+        var dist = gju.pointDistance(airportById[src],airportById[dest]);
+
+        airportLinks[src].cout.push([dest,dist]);
+        airportLinks[dest].cin.push([src,dist]);
+      }
+    }
+
+
+    //reject all airports that have less than minConnections connections
+    var airports = svg.selectAll(".airport")
+    .data(allAirports.features)
     .enter().append('path')
       .attr("d", path)
       .attr("class", "airport");
 
     //On click of an airport
-    airports.on("click",function(d){
+    airports.on("mouseover",function(d){
 
       var airportID = d.properties.airportID;
       var connectedAirports=[]
       //find all airports connected to d
-      d3.csv("data/routes.csv", function(data) { 
-        var len = data.length
-        for (var i=0;i<len;i++)
-          if(data[i].srcAirportID==airportID)
-            connectedAirports.push(data[i].destAirportID)
+      for (var i=0;i<allRoutes.length;i++)
+      {
+        if(allRoutes[i].srcAirportID==airportID)
+        {
+          connectedAirports.push(allRoutes[i].destAirportID)
+        }
+      }
 
-        console.log(connectedAirports.length)
-        //add a quantization class to each airport
-        airports.attr("class",function(e){
-          if(_.indexOf(connectedAirports,e.properties.airportID) != -1)
-          {
-            return (quantize(gju.pointDistance(e,d)))
-          }
-          else if (e.properties.airportID == airportID)
-            return "red"
-          else
-            return (quantize(gju.pointDistance(e,d)) + " none")
-          })//quantize here  gju.pointDistance
-      
+      console.log(connectedAirports.length)
+      //add a quantization class to each airport
+      airports.attr("class",function(e){
+        if(_.indexOf(connectedAirports,e.properties.airportID) != -1)
+        {
+          return (quantize(planeDistanceToTime(gju.pointDistance(e,d))))
+        }
+        else if (e.properties.airportID == airportID)
+          return "red"
+        else
+          return (quantize(gju.pointDistance(e,d)) + " none")
+          //quantize here  gju.pointDistance
       });
-    })
+    });
+  });
+});
 
-})
 
-function connected(d)
-{
 
-}
+
+
 
 </script>
 
