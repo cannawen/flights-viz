@@ -90,8 +90,8 @@ var quantize = d3.scale.quantize()
 
 window.startingCity=null;
 
-function planeDistanceToTime(dist){
-  return dist/airSpeed + airportDelay;
+function planeTimeBetween(src,dest){
+  return ( gju.pointDistance(src,dest) / airSpeed ) + airportDelay;
 }
 
 d3.json("data/world.json", function(error, world) {
@@ -105,6 +105,15 @@ d3.json("data/world.json", function(error, world) {
 
 });
 
+function initializeDijkstras()
+{
+  for (var l in window.airportLinks)
+  {
+    airportLinks[l].prev=null;
+    airportLinks[l].cost=Infinity;
+  }
+}
+
 d3.json("data/original/airport.json", function(allAirports) {
   d3.csv("data/routes.csv", function(allRoutes) {
     
@@ -115,7 +124,7 @@ d3.json("data/original/airport.json", function(allAirports) {
       id = allAirports.features[i].properties.airportID;
 
       airportById[id] = allAirports.features[i];
-      airportLinks[id] = {cin:[],cout:[]};
+      airportLinks[id] = {cin:[],cout:[],prev:null,cost:Infinity};
     }
 
 
@@ -126,15 +135,21 @@ d3.json("data/original/airport.json", function(allAirports) {
       
       if(src != "\\N" && dest != "\\N"){
 
-        var dist = gju.pointDistance(airportById[src],airportById[dest]);
+        var time = planeTimeBetween(airportById[src],airportById[dest]);
 
-        airportLinks[src].cout.push([dest,dist]);
-        airportLinks[dest].cin.push([src,dist]);
+        airportLinks[src].cout.push([dest,time]);
+        airportLinks[dest].cin.push([src,time]);
       }
     }
 
+    //Maybe this isn't needed
+    for(var a in allAirports.features){
+      var id = allAirports.features[a].properties.airportID;
+      allAirports.features[a].properties.cin = airportLinks[id].cin;
+      allAirports.features[a].properties.cout = airportLinks[id].cout;
+    }
 
-    //reject all airports that have less than minConnections connections
+
     var airports = svg.selectAll(".airport")
     .data(allAirports.features)
     .enter().append('path')
@@ -158,14 +173,15 @@ d3.json("data/original/airport.json", function(allAirports) {
       console.log(connectedAirports.length)
       //add a quantization class to each airport
       airports.attr("class",function(e){
+        bucket = quantize(planeTimeBetween(e,d))
         if(_.indexOf(connectedAirports,e.properties.airportID) != -1)
         {
-          return (quantize(planeDistanceToTime(gju.pointDistance(e,d))))
+          return bucket
         }
         else if (e.properties.airportID == airportID)
           return "red"
         else
-          return (quantize(gju.pointDistance(e,d)) + " none")
+          return (bucket + " none")
           //quantize here  gju.pointDistance
       });
     });
