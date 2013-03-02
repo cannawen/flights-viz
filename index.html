@@ -105,13 +105,73 @@ d3.json("data/world.json", function(error, world) {
 
 });
 
-function initializeDijkstras()
+function initializeDijkstras(links)
 {
-  for (var l in window.airportLinks)
+  for (var l in links)
   {
-    airportLinks[l].prev=undefined;
-    airportLinks[l].cost=Infinity;
+    links[l].prev=undefined;
+    links[l].cost=Infinity;
   }
+}
+
+function dijkstras()
+{
+  links = window.airportLinks;
+  //Dijkstra's Algotithm
+  initializeDijkstras(links)
+
+  //Set current node to cost 0
+  links[d.airportID].cost=0;
+
+  //Place all nodes in queue
+  var Q = links;
+  //Final set of nodes
+  var nodes;
+
+  //While queue is not empty
+  while ( Q != {})
+  {
+    //u is node with smallest distance
+    //If the Queue was sorted, you could just dequeue it here
+    var u=_.min(Q,function(q){
+      return q.cost
+    })
+    //remove u from Q
+    delete Q.u;
+
+    //If minimum cost is infinity, we have reached the end
+    if (u.cost==Infinity)
+      break;
+
+    //Push u to final graph
+    nodes.push(u);
+
+    //For each neighbour v of u
+    for (var i=0; i<u.cout.length;i++)
+    {
+      //v is one neighbour of u, v=[id,cost]
+      var v = u.cout[i]
+      //is v still in Q?
+      vObj=Q[v[0]]
+      if ( vObj != undefined )
+      {
+        //How much would it cost to go from u to v?
+        var alt = u.cost + v[1]
+        //Is this new cost lower than v's currnet cost?
+        if ( alt < vObj.cost  )
+        {
+          //Set v's cost to the lower cost
+          vObj.cost = alt;
+          //Set the previous to u
+          vObj.prev = u;
+          //Put vObj into links, replace
+
+          //If I were going to sort the Q, I would sort it here
+        }
+      }
+    }
+  }
+  return nodes;
 }
 
 d3.json("data/original/airport.json", function(allAirports) {
@@ -159,54 +219,10 @@ d3.json("data/original/airport.json", function(allAirports) {
     //On click of an airport
     airports.on("click",function(d){
 
-      //Dijkstra's Algotithm
-      initializeDijkstras()
-      //Set current node to cost 0
-      airportLinks[d.airportID].cost=0;
+      dijkstras();
 
-      //Place all nodes in queue
-      var Q = airportLinks;
 
-      //While queue is not empty
-      while ( Q != {})
-      {
-        //u is node with smallest distance
-        //If the Queue was sorted, you could just dequeue it here
-        var u=_.min(Q,function(q){
-          return q.cost
-        })
-        //remove u from Q
-        delete Q.u
-        //If minimum cost is infinity, we have reached the end
-        if (u.cost==Infinity)
-          break;
 
-        //For each neighbour v of u
-        for (var i=0; i<u.cout.length;i++)
-        {
-          //v is one neighbour of u, v=[id,cost]
-          var v = u.cout[i]
-          //is v still in Q?
-          vObj=Q[v[0]]
-          if ( vObj != undefined )
-          {
-            //How much would it cost to go from u to v?
-            var alt = u.cost + v[1]
-            //Is this new cost lower than v's currnet cost?
-            if ( alt < vObj.cost  )
-            {
-              //Set v's cost to the lower cost
-              vObj.cost = alt;
-              //Set the previous to u
-              vObj.prev = u;
-              //If I were going to sort the Q, I would sort it here
-            }
-          }
-
-        }
-      }
-
-      });
     });
   });
 });
