@@ -27,12 +27,13 @@ svg path.land {
   stroke: #CCC;
 }
 
-.red {
-  fill: #F00;
+.startingAirport {
+  fill: #00F;
+  pointRadius: 5;
 }
 
-.none {
-  opacity: 0.05;
+.unconnectedAirport {
+  opacity: 0.00;
 }
 
 .src {
@@ -43,15 +44,19 @@ svg path.land {
   
 }
 
-.q0-9 { fill:#000000; }
-.q1-9 { fill:#000642; }
-.q2-9 { fill:#010a6b; }
-.q3-9 { fill:#030e8a; }
-.q4-9 { fill:#0210ab; }
-.q5-9 { fill:#0213cc; }
-.q6-9 { fill:#0014f2; }
-.q7-9 { fill:#2638ff; }
-.q8-9 { fill:#5c69fa; }
+.airportError {
+  fill: #00F;
+}
+
+.q0-9 { fill:#0F0; }
+.q1-9 { fill:#2D0; }
+.q2-9 { fill:#4B0; }
+.q3-9 { fill:#690; }
+.q4-9 { fill:#870; }
+.q5-9 { fill:#960; }
+.q6-9 { fill:#B40; }
+.q7-9 { fill:#D20; }
+.q8-9 { fill:#F00; }
 
 </style>
 <body>
@@ -67,7 +72,7 @@ var minConnections = 0;
 var airSpeed = 250; //meters/second
 var airportDelay = 7200 //two hours in seconds
 
-var maxDomain = 10000000/airSpeed;
+var maxDomain = 50000000/airSpeed;
 
 var width = 1200,
     height = 800;
@@ -114,19 +119,18 @@ function initializeDijkstras(links)
   }
 }
 
-function dijkstras()
+function dijkstras(d,links)
 {
-  links = window.airportLinks;
+  var Q = JSON.parse(JSON.stringify(links))
   //Dijkstra's Algotithm
-  initializeDijkstras(links)
+  initializeDijkstras(Q)
 
   //Set current node to cost 0
-  links[d.airportID].cost=0;
+  Q[d.airportID].cost=0;
 
   //Place all nodes in queue
-  var Q = links;
   //Final set of nodes
-  var nodes;
+  var nodes={};
 
   //While queue is not empty
   while ( Q != {})
@@ -136,16 +140,16 @@ function dijkstras()
     var u=_.min(Q,function(q){
       return q.cost
     })
-    //remove u from Q
-    delete Q.u;
 
     //If minimum cost is infinity, we have reached the end
-    if (u.cost==Infinity)
+    if (u==Infinity || u.cost==Infinity)
       break;
 
+    //remove u from Q
+    delete Q[u.id];
     //Push u to final graph
-    nodes.push(u);
-
+    nodes[u.id]=u;
+    console.log("w")
     //For each neighbour v of u
     for (var i=0; i<u.cout.length;i++)
     {
@@ -171,20 +175,22 @@ function dijkstras()
       }
     }
   }
+
   return nodes;
 }
 
-d3.json("data/original/airport.json", function(allAirports) {
+d3.json("data/majorAirports.json", function(allAirports) {
   d3.csv("data/routes.csv", function(allRoutes) {
     
-    window.airportById = {};
-    window.airportLinks = {};
+    airportById = {};
+    airportLinks = {};
 
     for (var i=0;i<allAirports.features.length;i++){
       id = allAirports.features[i].properties.airportID;
-
-      airportById[id] = allAirports.features[i];
-      airportLinks[id] = {cin:[],cout:[],prev:undefined,cost:Infinity};
+      if(id != "\\N"){
+        airportById[id] = allAirports.features[i];
+        airportLinks[id] = {id:id,cin:[],cout:[],prev:undefined,cost:Infinity};
+      }
     }
 
 
@@ -193,20 +199,13 @@ d3.json("data/original/airport.json", function(allAirports) {
       var src = allRoutes[i].srcAirportID;
       var dest = allRoutes[i].destAirportID;
       
-      if(src != "\\N" && dest != "\\N"){
+      if(src != "\\N" && dest != "\\N"){//Check maybe redundant now
 
         var time = planeTimeBetween(airportById[src],airportById[dest]);
 
         airportLinks[src].cout.push([dest,time]);
         airportLinks[dest].cin.push([src,time]);
       }
-    }
-
-    //Maybe this isn't needed
-    for(var a in allAirports.features){
-      var id = allAirports.features[a].properties.airportID;
-      allAirports.features[a].properties.cin = airportLinks[id].cin;
-      allAirports.features[a].properties.cout = airportLinks[id].cout;
     }
 
 
@@ -219,8 +218,28 @@ d3.json("data/original/airport.json", function(allAirports) {
     //On click of an airport
     airports.on("click",function(d){
 
-      dijkstras();
+      graph = dijkstras(d.properties,airportLinks);
 
+      //Look through all airports
+      airports.attr("class",function(all){
+
+        //id of airport we are looking at
+        var id = all.properties.airportID;
+
+        //if airport does not exist in graph, then it is not connected
+        if ( graph[id] == undefined )
+          return "unconnectedAirport"
+
+        var cost = graph[id].cost;
+        //If airport is non-infinity, set to quantization level
+        if ( cost > 0 )
+          return quantize(cost);
+        //If airport is 0, set to startingAirport
+        else if ( cost == 0)
+          return "startingAirport"
+        else
+          return "airportError"
+      })
 
 
     });
