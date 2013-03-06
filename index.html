@@ -49,14 +49,14 @@ svg path.land {
 }
 
 .q0-9 { fill:#0F0; }
-.q1-9 { fill:#2D0; }
-.q2-9 { fill:#4B0; }
-.q3-9 { fill:#690; }
-.q4-9 { fill:#870; }
-.q5-9 { fill:#960; }
-.q6-9 { fill:#B40; }
-.q7-9 { fill:#D20; }
-.q8-9 { fill:#F00; }
+.q1-9 { fill:#0D0; }
+.q2-9 { fill:#0B0; }
+.q3-9 { fill:#090; }
+.q4-9 { fill:#070; }
+.q5-9 { fill:#060; }
+.q6-9 { fill:#040; }
+.q7-9 { fill:#020; }
+.q8-9 { fill:#000; }
 
 </style>
 <body>
@@ -119,24 +119,28 @@ function initializeDijkstras(links)
   }
 }
 
+
 function dijkstras(d,links)
 {
   var Q = JSON.parse(JSON.stringify(links))
+  var id = d.airportID;
   //Dijkstra's Algotithm
   initializeDijkstras(Q)
 
   //Set current node to cost 0
-  Q[d.airportID].cost=0;
+  Q[id].cost=0;
 
   //Place all nodes in queue
   //Final set of nodes
   var nodes={};
+  
+  console.log("working, please hold. airportid: " + id)
 
   //While queue is not empty
   while ( Q != {})
   {
     //u is node with smallest distance
-    //If the Queue was sorted, you could just dequeue it here
+    //If the Queue was sorted, you could just dequeue it here #TODO
     var u=_.min(Q,function(q){
       return q.cost
     })
@@ -149,16 +153,18 @@ function dijkstras(d,links)
     delete Q[u.id];
     //Push u to final graph
     nodes[u.id]=u;
-    console.log("w")
     //For each neighbour v of u
     for (var i=0; i<u.cout.length;i++)
     {
+
       //v is one neighbour of u, v=[id,cost]
       var v = u.cout[i]
       //is v still in Q?
-      vObj=Q[v[0]]
+      var vObj=Q[v[0]]
+
       if ( vObj != undefined )
       {
+
         //How much would it cost to go from u to v?
         var alt = u.cost + v[1]
         //Is this new cost lower than v's currnet cost?
@@ -168,9 +174,9 @@ function dijkstras(d,links)
           vObj.cost = alt;
           //Set the previous to u
           vObj.prev = u;
-          //Put vObj into links, replace
 
-          //If I were going to sort the Q, I would sort it here
+          //If I were going to sort the Q, I would sort it here #TODO
+
         }
       }
     }
@@ -232,15 +238,11 @@ d3.json("data/majorAirports.json", function(allAirports) {
 
         var cost = graph[id].cost;
         //If airport is non-infinity, set to quantization level
-        if ( cost > 0 )
-          return quantize(cost);
-        //If airport is 0, set to startingAirport
-        else if ( cost == 0)
-          return "startingAirport"
-        else
-          return "airportError"
+        
+        return quantize(cost);
       })
 
+      d3.select(this).attr("class","startingAirport");
 
     });
   });
