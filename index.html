@@ -28,12 +28,13 @@ svg path.land {
 }
 
 .startingAirport {
-  fill: #00F;
+  fill: #F00;
   pointRadius: 5;
 }
 
 .unconnectedAirport {
-  opacity: 0.00;
+  opacity: 1.00;
+  fill: #00F;
 }
 
 .src {
@@ -85,9 +86,29 @@ var path = d3.geo.path()
     .projection(projection)
     .pointRadius(2);
 
+var p2 = d3.geo.path()
+    .projection(projection)
+    .pointRadius(10);
+
 var svg = d3.select("body").append("svg")
     .attr("width", width)
     .attr("height", height);
+
+var grad = svg.append("defs")
+  .append("radialGradient")
+    .attr("id","grad1")
+    .attr("cx","50%")
+    .attr("cy","50%")
+    .attr("r","50%")
+    .attr("fx","50%")
+    .attr("fy","50%");
+grad.append("stop")
+  .attr("offset","0%")
+  .attr("style","stop-color:rgb(255,255,255);stop-opacity:0");
+grad.append("stop")
+  .attr("offset","100%")
+  .attr("style","stop-color:rgb(0,0,255);stop-opacity:1");
+
 
 var quantize = d3.scale.quantize()
     .domain([0, maxDomain])
@@ -214,12 +235,28 @@ d3.json("data/majorAirports.json", function(allAirports) {
       }
     }
 
+function f(d,e){
+  projection(d.geometry.coordinates)[0]
+}
 
     var airports = svg.selectAll(".airport")
     .data(allAirports.features)
     .enter().append('path')
       .attr("d", path)
-      .attr("class", "airport");
+      .attr("class", "airport")
+    
+    var circles = svg.selectAll(".circle")
+    .data(allAirports.features)
+    .enter().append('path')
+      .attr("d",p2)
+//      .attr("r",10)
+      //.attr("transform", function() {return "translate(" + projection([-75,43]) + ")";})
+      //.attr("cx",f(p2))
+      //.attr("cx",function(d){projection(d.geometry.coordinates)[1]})
+      .attr("fill","url(#grad1)")
+      .attr("class","circle");
+
+
 
     //On click of an airport
     airports.on("click",function(d){
@@ -255,12 +292,3 @@ d3.json("data/majorAirports.json", function(allAirports) {
 
 </script>
 
-
-<!--
-
-<body>
-  <svg width=1200 height=800 class="numer of strings">
-    <path d=path() class="place" /> data={}
-  </svg>
-</body>
--->
