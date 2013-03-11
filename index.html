@@ -73,7 +73,7 @@ var minConnections = 0;
 var airSpeed = 250; //meters/second
 var airportDelay = 7200 //two hours in seconds
 
-var maxDomain = 50000000/airSpeed;
+var maxCost = 50000000/airSpeed;
 
 var width = 1200,
     height = 800;
@@ -84,11 +84,8 @@ var projection = d3.geo.miller()
 
 var path = d3.geo.path()
     .projection(projection)
-    .pointRadius(2);
-
-var p2 = d3.geo.path()
-    .projection(projection)
     .pointRadius(10);
+
 
 var svg = d3.select("body").append("svg")
     .attr("width", width)
@@ -110,11 +107,16 @@ grad.append("stop")
   .attr("style","stop-color:rgb(0,0,255);stop-opacity:1");
 
 
-var quantize = d3.scale.quantize()
-    .domain([0, maxDomain])
-    .range(d3.range(9).map(function(i) { return "q" + i + "-9"; }));
+var colour = d3.scale.linear()
+    .domain([0, 1])
+    .range(['green','white']);//Kind of ugly atm
 
 window.startingCity=null;
+
+function getGrad(center)
+{
+
+}
 
 function planeTimeBetween(src,dest){
   return ( gju.pointDistance(src,dest) / airSpeed ) + airportDelay;
@@ -156,6 +158,7 @@ function dijkstras(d,links)
   var nodes={};
   
   console.log("working, please hold. airportid: " + id)
+    console.log(d)
 
   //While queue is not empty
   while ( Q != {})
@@ -244,17 +247,9 @@ function f(d,e){
     .enter().append('path')
       .attr("d", path)
       .attr("class", "airport")
-    
-    var circles = svg.selectAll(".circle")
-    .data(allAirports.features)
-    .enter().append('path')
-      .attr("d",p2)
-//      .attr("r",10)
-      //.attr("transform", function() {return "translate(" + projection([-75,43]) + ")";})
-      //.attr("cx",f(p2))
-      //.attr("cx",function(d){projection(d.geometry.coordinates)[1]})
       .attr("fill","url(#grad1)")
       .attr("class","circle");
+
 
 
 
@@ -264,7 +259,7 @@ function f(d,e){
       graph = dijkstras(d.properties,airportLinks);
 
       //Look through all airports
-      airports.attr("class",function(all){
+      airports.attr("fill",function(all){
 
         //id of airport we are looking at
         var id = all.properties.airportID;
@@ -276,8 +271,9 @@ function f(d,e){
         var cost = graph[id].cost;
         //If airport is non-infinity, set to quantization level
         
-        return quantize(cost);
+        return colour(cost/maxCost);
       })
+      .attr("class","")
 
       d3.select(this).attr("class","startingAirport");
 
